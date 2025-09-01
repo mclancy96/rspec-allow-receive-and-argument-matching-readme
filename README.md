@@ -28,24 +28,24 @@ return value
 
 The most common way to stub a method in RSpec is with `allow(...).to receive`. This lets you control what a method returns, without calling the real implementation.
 
-### Basic Example
+### Basic Example (WeatherStation domain)
 
 Here’s how you can stub a method on a double:
 
 ```ruby
 # /spec/allow_receive_spec.rb
-RSpec.describe "allow(...).to receive" do
-  it "stubs a method" do
-    user = double("User")
-    allow(user).to receive(:admin?).and_return(true)
-    expect(user.admin?).to be true
+RSpec.describe 'allow/receive and argument matching (WeatherStation examples)' do
+  it 'allows a method to be stubbed on a double' do
+    station = double('WeatherStation')
+    allow(station).to receive(:temperature).and_return(68.5)
+    expect(station.temperature).to eq(68.5)
   end
 end
 ```
 
-In this example, we create a double called "User" and tell it to respond to `admin?` with `true`. When we call `user.admin?`, it returns `true`—no real User class needed!
+In this example, we create a double called "WeatherStation" and tell it to respond to `temperature` with `68.5`. When we call `station.temperature`, it returns `68.5`—no real WeatherStation class needed!
 
-Run this file with `rspec /spec/allow_receive_spec.rb` to see the stub in action.
+Run this file with `rspec spec/allow_receive_spec.rb` to see the stub in action.
 
 **Example Output:**
 
@@ -68,47 +68,44 @@ You can control what a stubbed method returns, even based on the arguments passe
 Here, we stub a method to return a value only for specific arguments:
 
 ```ruby
-# /spec/return_values_spec.rb
-RSpec.describe "Return Values" do
-  it "sets a return value" do
-    calc = double("Calculator")
-    allow(calc).to receive(:add).with(2, 2).and_return(4)
-    expect(calc.add(2, 2)).to eq(4)
-  end
+# /spec/allow_receive_spec.rb
+it 'returns a value for specific arguments' do
+  station = double('WeatherStation')
+  allow(station).to receive(:humidity).and_return(nil)
+  allow(station).to receive(:humidity).with('NYC').and_return(55)
+  expect(station.humidity('NYC')).to eq(55)
+  expect(station.humidity('LA')).to be_nil # not stubbed
 end
 ```
-
-Try running this file with `rspec /spec/return_values_spec.rb` to see the stub in action.
 
 ### Example: Stubbing Multiple Return Values
 
 You can stub the same method with different arguments and return values:
 
 ```ruby
-# /spec/return_values_spec.rb
-calc = double("Calculator")
-allow(calc).to receive(:add).with(1, 1).and_return(2)
-allow(calc).to receive(:add).with(2, 2).and_return(4)
-expect(calc.add(1, 1)).to eq(2)
-expect(calc.add(2, 2)).to eq(4)
+# /spec/allow_receive_spec.rb
+station = double('WeatherStation')
+allow(station).to receive(:forecast).and_return(nil)
+allow(station).to receive(:forecast).with(:today).and_return('Sunny')
+allow(station).to receive(:forecast).with(:tomorrow).and_return('Rainy')
+expect(station.forecast(:today)).to eq('Sunny')
+expect(station.forecast(:tomorrow)).to eq('Rainy')
+expect(station.forecast(:friday)).to be_nil
 ```
-
-Run this code and see what happens if you call `calc.add(3, 3)` (hint: it returns nil).
 
 ### Example: Returning Different Values on Each Call
 
 You can also return a sequence of values for multiple calls to a stubbed method, which simulates changing state over time:
 
 ```ruby
-# /spec/return_values_spec.rb
-counter = double("Counter")
-allow(counter).to receive(:next).and_return(1, 2, 3)
-expect(counter.next).to eq(1)
-expect(counter.next).to eq(2)
-expect(counter.next).to eq(3)
+# /spec/allow_receive_spec.rb
+sensor = double('Sensor')
+allow(sensor).to receive(:read).and_return(10, 20, 30)
+expect(sensor.read).to eq(10)
+expect(sensor.read).to eq(20)
+expect(sensor.read).to eq(30)
+expect(sensor.read).to eq(30) # repeats last value
 ```
-
-Run this file with `rspec /spec/return_values_spec.rb` to see the sequence in action.
 
 ---
 
@@ -121,39 +118,39 @@ Argument matchers let you stub or verify methods regardless of the exact argumen
 You can match any arguments passed to a method:
 
 ```ruby
-# /spec/argument_matchers_spec.rb
-RSpec.describe "Argument Matchers" do
-  it "matches any arguments" do
-    logger = double("Logger")
-    allow(logger).to receive(:log).with(any_args)
-    logger.log("info", "message")
-    expect(logger).to have_received(:log)
-  end
-end
+# /spec/allow_receive_spec.rb
+logger = double('Logger')
+allow(logger).to receive(:log_event).with(any_args)
+logger.log_event('rain', { amount: 2 })
+logger.log_event('wind')
+expect(logger).to have_received(:log_event).twice
 ```
-
-Run this file with `rspec /spec/argument_matchers_spec.rb` to see how any_args works.
 
 ### Example: anything
 
 You can match any value for a specific argument:
 
 ```ruby
-# /spec/argument_matchers_spec.rb
-allow(obj).to receive(:foo).with(anything, 42)
-obj.foo("hello", 42)
+# /spec/allow_receive_spec.rb
+station = double('WeatherStation')
+allow(station).to receive(:report).and_return(nil)
+allow(station).to receive(:report).with(anything, 'high').and_return('Alert!')
+expect(station.report('temp', 'high')).to eq('Alert!')
+expect(station.report('humidity', 'high')).to eq('Alert!')
+expect(station.report('temp', 'low')).to be_nil
 ```
-
-This will match any first argument, as long as the second is 42.
 
 ### Example: hash_including
 
 You can match a hash that includes certain keys:
 
 ```ruby
-# /spec/argument_matchers_spec.rb
-allow(api).to receive(:post).with(hash_including(:token))
-api.post({ token: "abc", data: "payload" })
+# /spec/allow_receive_spec.rb
+station = double('WeatherStation')
+allow(station).to receive(:log_event).and_return(nil)
+allow(station).to receive(:log_event).with(hash_including(:event)).and_return('Logged!')
+expect(station.log_event({ event: 'storm', severity: 'high' })).to eq('Logged!')
+expect(station.log_event({ severity: 'high' })).to be_nil
 ```
 
 ### Example: array_including
@@ -161,9 +158,12 @@ api.post({ token: "abc", data: "payload" })
 You can match an array that includes certain elements:
 
 ```ruby
-# /spec/argument_matchers_spec.rb
-allow(arr).to receive(:concat).with(array_including(1, 2))
-arr.concat([1, 2, 3])
+# /spec/allow_receive_spec.rb
+sensor = double('Sensor')
+allow(sensor).to receive(:calibrate).and_return(nil)
+allow(sensor).to receive(:calibrate).with(array_including('temp', 'humidity')).and_return('Calibrated')
+expect(sensor.calibrate(['temp', 'humidity', 'pressure'])).to eq('Calibrated')
+expect(sensor.calibrate(['pressure'])).to be_nil
 ```
 
 ---
@@ -177,14 +177,12 @@ You can also check that a method was called, and with what arguments, using `exp
 Here’s how you can check that a method was called with specific arguments:
 
 ```ruby
-# /spec/argument_matchers_spec.rb
-logger = double("Logger")
-allow(logger).to receive(:log)
-logger.log("info", "message")
-expect(logger).to have_received(:log).with("info", "message")
+# /spec/allow_receive_spec.rb
+logger = double('Logger').as_null_object
+allow(logger).to receive(:log_event)
+logger.log_event('rain', { amount: 2 })
+expect(logger).to have_received(:log_event).with('rain', { amount: 2 })
 ```
-
-Try running this code and see what happens if you change the arguments.
 
 ---
 
@@ -197,26 +195,17 @@ Try running this code and see what happens if you change the arguments.
 
 ---
 
-## Practice Prompts
+## Getting Hands-On
 
-Try these exercises to reinforce your learning. For each, write your own spec in `/spec/argument_matchers_spec.rb` unless otherwise noted.
+You can fork and clone this lesson's repo, run the specs, and try implementing the two pending specs marked as student exercises in `spec/allow_receive_spec.rb`.
 
-**Exercise 1: Basic stubbing with allow/receive**
-Stub a method with `allow(...).to receive` and set a return value. What happens if you call it with different arguments?
+To run the specs:
 
-**Exercise 2: Argument matcher with any_args**
-Use argument matchers to stub a method for any arguments, and test that it works for multiple calls.
+```sh
+bin/rspec
+```
 
-**Exercise 3: Verifying method calls with have_received**
-Write a spec that verifies a method was called with specific arguments using `expect(...).to have_received`.
-
-**Exercise 4: Stubbing with hash_including or array_including**
-Use `hash_including` or `array_including` to stub a method that takes a hash or array.
-
-**Exercise 5: Stubbing real objects**
-Stub a method on a real Ruby object (not a double) and verify it was called.
-
-_Reflection: Why might we prefer argument matchers over hardcoding specific arguments in our stubs?_
+Look for the two pending specs (marked as 'Student exercise') and try to implement them yourself! All the examples use the WeatherStation domain, so you can see real-world usage of allow/receive and argument matchers in a practical context.
 
 ---
 
