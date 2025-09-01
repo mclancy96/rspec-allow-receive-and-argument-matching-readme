@@ -1,6 +1,6 @@
 # RSpec: Allow, Receive, and Argument Matching
 
-Welcome to Lesson 17! In this lesson, we're going to unlock the magic of stubbing and spying in RSpec. You'll learn how to use `allow(...).to receive` to stub methods, set return values, and use argument matchers to control and verify how your code interacts with its dependencies. These tools are essential for isolating your tests, making them faster, and ensuring your code behaves as expected—even when it depends on other objects, services, or APIs. We'll break down each concept, show you lots of examples, and give you practice prompts to reinforce your learning.
+In this lesson, we're going to unlock the magic of stubbing and spying in RSpec. You'll learn how to use `allow(...).to receive` to stub methods, set return values, and use argument matchers to control and verify how your code interacts with its dependencies. These tools are essential for isolating your tests, making them faster, and ensuring your code behaves as expected—even when it depends on other objects, services, or APIs. We'll break down each concept, show you lots of examples, and give you practice prompts to reinforce your learning.
 
 ---
 
